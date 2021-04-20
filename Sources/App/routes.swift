@@ -95,10 +95,10 @@ import Vapor
  
  路径组件
  每种路由注册方法都接受 PathComponent 的可变列表。此类型可以用字符串文字表示，并且有四种情况：
- Constant (foo)
- Parameter (:foo)
- Anything (*)
- Catchall (**)
+ Constant (foo)    静态路径
+ Parameter (:foo)  参数路径
+ Anything (*)      任何路径
+ Catchall (**)     通配路径
  
  静态路径
  这是静态路由组件。仅允许在此位置具有完全匹配的字符串的请求。
