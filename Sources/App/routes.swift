@@ -156,7 +156,34 @@ import Vapor
      return "\(int) is a great number"
  }
  
- 数据流
+ *** 数据流(Body Streaming)
+ 使用on方法注册路由时，可以指定如何处理请求正文。 默认情况下，请求主体在调用处理程序之前被收集到内存中。 这很有用，因为即使您的应用程序异步读取传入的请求，它也允许请求内容解码是同步的。
+ 默认情况下，Vapor将流主体的大小限制为16KB。 您可以使用app.routes进行配置。
+ ```
+ //将流媒体主体收集限制增加到500kb
+ app.routes.defaultMaxBodySize = "500kb"
+ ```
+ 如果正在收集的流媒体主体超出了配置的限制，则会引发413有效载荷过大错误。
+ 要为单个路由配置请求正文收集策略，请使用body参数。
+ ```
+ //在调用此路由之前，先收集流媒体主体（最大1mb）。
+ app.on(.POST, "listings", body: .collect(maxSize: "1mb")) { req in
+     // Handle request.
+ }
+ ```
+ 如果传递了maxSize进行收集，它将覆盖该路由的应用程序默认值。 要使用应用程序的默认值，请省略maxSize参数。
+ 
+ 对于较大的请求（例如文件上传），将请求主体收集在缓冲区中可能会占用系统内存。 为了防止收集请求主体，请使用流策略。
+ ```
+ //请求正文不会被收集到缓冲区中
+ app.on(.POST, "upload", body: .stream) { req in
+     ...
+ }
+ ```
+ 当请求主体流式传输时，req.body.data将为nil。 您必须使用req.body.drain来处理每个发送到路由的块。
+ 
+ 
+ 
  由 Catchall(**) 匹配的 URI 的值将以 [String] 的形式存储在 req.parameters 中。 你可以使用 req.parameters.getCatchall 访问这些组件。
  // responds to GET /hello/foo
  // responds to GET /hello/foo/bar
@@ -173,11 +200,124 @@ import Vapor
  app.on(.POST, "file-upload", body: .stream) { req in
      ...
  }
- 当请求体使用数据流传输时， req.body.data 将为 nil。你必须使用 req.body.drain 来处理每个发送到路由的数据块。
  
- 查看路由
- 你可以通过提供的 Routes 服务或使用 app.routes 来访问应用程序的路径。
+ *** 不区分大小写的路由
+ 路由的默认行为是区分大小写和保留大小写的。 出于路由目的，可以以不区分大小写和不区分大小写的方式交替处理常量路径组件。 要启用此行为，请在应用程序启动之前进行配置：
+ ```
+ app.routes.caseInsensitive = true
+ ```
+ 原始请求未做任何更改； 路由处理程序将接收未经修改的请求路径组件.
+ 
+ *** 查看路由(Viewing Routes)
+ 您可以通过使用 routes 服务或使用 app.routes 来访问应用程序的路由
+ ```
  print(app.routes.all)
+ ```
+ Vapor还附带有路由命令，该命令以ASCII格式的表格打印所有可用的路由。
+ ```
+ $ swift run Run routes (如何使用？)
+ ```
+ 
+ *** 元数据(Metadata)
+ 所有路线注册方法都返回创建的路线。 这使您可以将元数据添加到路由的userInfo字典中。 有一些默认方法可用，例如添加描述。
+ ```
+ app.get("hello", ":name") { req in
+     ...
+ }.description("says hello")
+ ```
+ 
+ ** 路由组(Route Groups)
+ 通过路由分组，您可以创建带有路径前缀或特定中间件的一组路由。 分组支持基于构建器和闭包的语法。
+ 所有分组方法均返回RouteBuilder，这意味着您可以将组与其他路由构建方法无限地混合，匹配和嵌套。
+ 
+ *** 路径前缀(Path Prefix)
+ 路径前缀路由组使您可以在一个路由组之前添加一个或多个路径组件。
+ ```
+ let users = app.grouped("users")
+ // GET /users
+ users.get { req in
+     ...
+ }
+ // POST /users
+ users.post { req in
+     ...
+ }
+ // GET /users/:id
+ users.get(":id") { req in
+     let id = req.parameters.get("id")!
+     ...
+ }
+ ```
+ 您可以传递给诸如get或post之类的方法的任何路径组件都可以传递为分组的。 还有另一种基于闭包的语法。
+ ```
+ app.group("users") { users in
+     // GET /users
+     users.get { req in
+         ...
+     }
+     // POST /users
+     users.post { req in
+         ...
+     }
+     // GET /users/:id
+     users.get(":id") { req in
+         let id = req.parameters.get("id")!
+         ...
+     }
+ }
+ ```
+ 嵌套路径前缀路由组使您可以简洁地定义CRUD API。
+ ```
+ app.group("users") { users in
+ // GET /users
+ users.get { ... }
+ // POST /users
+ users.post { ... }
+
+ users.group(":id") { user in
+     // GET /users/:id
+     user.get { ... }
+     // PATCH /users/:id
+     user.patch { ... }
+     // PUT /users/:id
+     user.put { ... }
+ }
+}
+ ```
+ *** 中间件(Middleware)
+ 除了为路径组件添加前缀之外，您还可以将中间件添加到路由组。
+ ```
+ app.get("fast-thing") { req in
+     ...
+ }
+ app.group(RateLimitMiddleware(requestsPerMinute: 5)) { rateLimited in
+     rateLimited.get("slow-thing") { req in
+         ...
+     }
+ }
+ ```
+ 这对于使用不同的身份验证中间件保护路由的子集特别有用。
+ ```
+ app.post("login") { ... }
+ let auth = app.grouped(AuthMiddleware())
+ auth.get("dashboard") { ... }
+ auth.get("logout") { ... }
+ ```
+ 
+ ** 重定向(Redirections)
+ 重定向在许多情况下很有用，例如将旧位置转发到SEO的新位置，将未经身份验证的用户重定向到登录页面或保持与新版本API的向后兼容性。
+ 要重定向请求，请使用：
+ ```
+ req.redirect(to: "/some/new/path")
+ ```
+ 您还可以指定重定向的类型，例如，永久重定向页面（以便正确更新您的SEO）使用：
+ ```
+ req.redirect(to: "/some/new/path", type: .permanent)
+ ```
+ 不同的RedirectType是：
+ .permanent-返回301永久重定向
+ .normal-返回303，请参阅其他重定向。 这是Vapor的默认设置，它告诉客户端使用GET请求进行重定向。
+ .temporary-返回307临时重定向。 这告诉客户端保留请求中使用的HTTP方法。
  */
 func routes(_ app: Application) throws {
     app.get { req in
@@ -191,10 +331,21 @@ func routes(_ app: Application) throws {
         let name = req.parameters.get("name")
         let n = req.parameters.getCatchall()
         print(n)
-        return "Hello, \(String(describing: name))!"
-    }
+        return "Arl 参数路由 for, \(String(describing: name))!"
+    }.description("**这是一个参数路由**")
     
     app.on(.GET, "hel","vapor") {_ in
         return "启动测试"
     }
+    
+    //路由组
+    let artGrouped = app.grouped("artGrouped");
+    artGrouped.get{req -> String in
+        return "art 的路由组"
+    }
+    //重定向
+    app.get("artRedirect"){req in
+        req.redirect(to: "/art/Redirect")
+    }
+    print("已注册的全部路由---",app.routes.all)
 }
