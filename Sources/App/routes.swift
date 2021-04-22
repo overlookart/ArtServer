@@ -347,5 +347,22 @@ func routes(_ app: Application) throws {
     app.get("artRedirect"){req in
         req.redirect(to: "/art/Redirect")
     }
+    
+    
+    app.post("artcontent") { req -> HTTPResponseStatus in
+        let artcontent = try req.content.decode(ArtContent.self)
+        print("Post请求中的Content")
+        print(artcontent)
+        return HTTPStatus.ok
+    }
+    
+    app.get("artcontent", ":name") { (req) -> HTTPResponseStatus in
+        let artcontent = try req.query.decode(ArtContent.self)
+        print("get请求中的Content")
+        print(artcontent)
+        return HTTPStatus.ok
+    }
+    
+    
     print("已注册的全部路由---",app.routes.all)
 }
