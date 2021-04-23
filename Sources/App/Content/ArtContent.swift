@@ -474,3 +474,171 @@ extension ArtUser: Validatable {
         validations.add("name", as: String.self, is: !.empty)
     }
 }
+
+
+/**
+ 异步(Async)
+ 您可能已经注意到Vapor中的某些API期望或返回通用的EventLoopFuture类型。 如果这是您第一次了解futures，那么一开始它们似乎有点令人困惑。 但请放心，本指南将向您展示如何利用其强大的API。
+
+ Promises和futures是相关的但截然不同的类型。 Promises用于创建futures。 在大多数情况下，您将使用Vapor API返回的futures，而不必担心创建Promises。您可能已经注意到Vapor中的某些APIfutures或返回通用EventLoopFuture类型。 如果这是您第一次了解futures，那么一开始它们似乎有些混乱。 但是请放心，本指南将向您展示如何利用其强大的API。
+
+ 大多数时候，您将使用Vapor API返回的futures，而无需担心创建Promises。
+ ```
+ type             description              mutability
+ EventLoopFuture  引用可能尚不可用的值         read-only
+ EventLoopPromise 异步提供一些价值的futures    read/write
+ ```
+ futures是基于回调的异步API的替代方法。 可以通过简单的关闭无法实现的方式来链接和转换futures。
+ 
+ 转化(Transforming)
+ 就像Swift中的可选和数组一样，Future可以被映射和映射。 这些是您将对Future执行的最常见的操作。
+ ```
+ method             argument                    description
+ map                (T) -> U                    将Future值映射到其他值。
+ flatMapThrowing    (T) throws -> U             将Future值映射到其他值或错误。
+ flatMap            (T) -> EventLoopFuture<U>   将Future值映射到不同的Future值。
+ transform          U                           将Future映射到已经可用的值。
+ ```
+ 如果在Optional <T>和Array <T>上查看map和flatMap的方法签名，您会发现它们与EventLoopFuture <T>上可用的方法非常相似
+ 
+ 映射(map)
+ map方法使您可以将Future值转换为另一个值。 因为Future值可能尚不可用（可能是异步任务的结果），所以我们必须提供一个闭包以接受该值。
+ ```
+ /// Assume we get a future string back from some API
+ let futureString: EventLoopFuture<String> = ...
+
+ /// Map the future string to an integer
+ let futureInt = futureString.map { string in
+     print(string) // The actual String
+     return Int(string) ?? 0
+ }
+
+ /// We now have a future integer
+ print(futureInt) // EventLoopFuture<Int>
+ ```
+ 
+
+ flatMapThrowing
+ flatMapThrowing方法使您可以将future值转换为另一个值或引发错误。
+ 因为抛出错误必须在内部创建一个新的Future，所以即使闭包不接受Future的返回值，此方法的前缀也为flatMap。
+ ```
+ /// Assume we get a future string back from some API
+ let futureString: EventLoopFuture<String> = ...
+
+ /// Map the future string to an integer
+ let futureInt = futureString.flatMapThrowing { string in
+     print(string) // The actual String
+     // Convert the string to an integer or throw an error
+     guard let int = Int(string) else {
+         throw Abort(...)
+     }
+     return int
+ }
+
+ /// We now have a future integer
+ print(futureInt) // EventLoopFuture<Int>
+ ```
+ 
+ flatMap
+ flatMap方法允许您将future值转换为另一个future值。 因为它可以避免创建嵌套的future（例如EventLoopFuture <EventLoopFuture <T >>），所以它被称为“flat”map。 换句话说，它可以帮助您保持泛型不变。
+ ```
+ /// Assume we get a future string back from some API
+ let futureString: EventLoopFuture<String> = ...
+
+ /// Assume we have created an HTTP client
+ let client: Client = ...
+
+ /// flatMap the future string to a future response
+ let futureResponse = futureString.flatMap { string in
+     client.get(string) // EventLoopFuture<ClientResponse>
+ }
+
+ /// We now have a future response
+ print(futureResponse) // EventLoopFuture<ClientResponse>
+ ```
+ 如果我们在上面的示例中使用map，则最终将得到：EventLoopFuture <EventLoopFuture <ClientResponse >>
+ 
+ 要在flatMap内部调用throwing方法，请使用Swift的do / catch关键字并创建完整的Future
+ ```
+ /// Assume future string and client from previous example.
+ let futureResponse = futureString.flatMap { string in
+     let url: URL
+     do {
+         // Some synchronous throwing method.
+         url = try convertToURL(string)
+     } catch {
+         // Use event loop to make pre-completed future.
+         return eventLoop.makeFailedFuture(error)
+     }
+     return client.get(url) // EventLoopFuture<ClientResponse>
+ }
+ ```
+ 
+ transform
+ transform方法允许您修改future值，而忽略现有值。 这对于转换EventLoopFuture <Void>的结果特别有用，而future的实际值并不重要。
+ EventLoopFuture <Void>，有时也称为信号，是一个future，其唯一目的是将某些异步操作的完成或失败通知您
+ ```
+ /// Assume we get a void future back from some API
+ let userDidSave: EventLoopFuture<Void> = ...
+
+ /// Transform the void future to an HTTP status
+ let futureStatus = userDidSave.transform(to: HTTPStatus.ok)
+ print(futureStatus) // EventLoopFuture<HTTPStatus>
+ ```
+ 即使我们提供了一个已经可用的值来进行转换，但这仍然是一个转换。 直到所有先前的future都已完成（或失败）后，future才会完成。
+ 
+ 链式(Chaining)
+ future转换的很大一部分是可以链接在一起的。 这使您可以轻松表达许多转换和子任务。
+ 让我们从上面修改示例，以了解如何利用Chaining
+ ```
+ /// Assume we get a future string back from some API
+ let futureString: EventLoopFuture<String> = ...
+
+ /// Assume we have created an HTTP client
+ let client: Client = ...
+
+ /// Transform the string to a url, then to a response
+ let futureResponse = futureString.flatMapThrowing { string in
+     guard let url = URL(string: string) else {
+         throw Abort(.badRequest, reason: "Invalid URL string: \(string)")
+     }
+     return url
+ }.flatMap { url in
+     client.get(url)
+ }
+
+ print(futureResponse) // EventLoopFuture<ClientResponse>
+ ```
+ 首次调用map之后，将创建一个临时的EventLoopFuture <URL>。 然后立即将此将来映射到EventLoopFuture <Response>
+ 
+ 
+ Future
+ 让我们看一下使用EventLoopFuture <T>的其他方法。
+ makeFuture
+ 您可以使用事件循环使用值或错误创建预完成的future。
+ ```
+ // Create a pre-succeeded future.
+ let futureString: EventLoopFuture<String> = eventLoop.makeSucceededFuture("hello")
+
+ // Create a pre-failed future.
+ let futureString: EventLoopFuture<String> = eventLoop.makeFailedFuture(error)
+ ```
+ 
+ whenComplete
+ 您可以使用whenComplete添加将在将来成功或失败时执行的回调
+ ```
+ /// Assume we get a future string back from some API
+ let futureString: EventLoopFuture<String> = ...
+
+ futureString.whenComplete { result in
+     switch result {
+     case .success(let string):
+         print(string) // The actual String
+     case .failure(let error):
+         print(error) // A Swift Error
+     }
+ }
+ ```
+ 您可以根据需要向将来添加尽可能多的回调。
+ 
+ */
