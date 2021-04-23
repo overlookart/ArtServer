@@ -363,6 +363,23 @@ func routes(_ app: Application) throws {
         return HTTPStatus.ok
     }
     
+    //get请求:/user/register?name=xzh&age=23&email=bse@22.com&phone=123
+    app.get("user","register") { (req) -> ArtUser in
+        //查询解码数据
+        let user = try req.query.decode(ArtUser.self)
+        //验证参数
+        try ArtUser.validate(query: req)
+        return user
+    }
+    
+    //post请求/user/register body:视为content
+    app.post("user","register") { (req) -> ArtUser in
+        //通过Content解码Post请求参数
+        let user = try req.content.decode(ArtUser.self)
+        //验证参数
+        try ArtUser.validate(content: req)
+        return user
+    }
     
     print("已注册的全部路由---",app.routes.all)
 }
