@@ -57,10 +57,6 @@ import Vapor
  原始请求未做任何更改； 路由处理程序将接收未经修改的请求路径组件.
  
  *** 查看路由(Viewing Routes)
- 您可以通过使用 routes 服务或使用 app.routes 来访问应用程序的路由
- ```
- print(app.routes.all)
- ```
  Vapor还附带有路由命令，该命令以ASCII格式的表格打印所有可用的路由。
  ```
  $ swift run Run routes (如何使用？)
@@ -94,20 +90,6 @@ import Vapor
  auth.get("logout") { ... }
  ```
  
- ** 重定向(Redirections)
- 重定向在许多情况下很有用，例如将旧位置转发到SEO的新位置，将未经身份验证的用户重定向到登录页面或保持与新版本API的向后兼容性。
- 要重定向请求，请使用：
- ```
- req.redirect(to: "/some/new/path")
- ```
- 您还可以指定重定向的类型，例如，永久重定向页面（以便正确更新您的SEO）使用：
- ```
- req.redirect(to: "/some/new/path", type: .permanent)
- ```
- 不同的RedirectType是：
- .permanent-返回301永久重定向
- .normal-返回303，请参阅其他重定向。 这是Vapor的默认设置，它告诉客户端使用GET请求进行重定向。
- .temporary-返回307临时重定向。 这告诉客户端保留请求中使用的HTTP方法。
  */
 func routes(_ app: Application) throws {
     app.get { req in
@@ -121,11 +103,6 @@ func routes(_ app: Application) throws {
                   kill 一个进程：sudo kill (PID)
 """
     }
-    //重定向
-    app.get("artRedirect"){req in
-        req.redirect(to: "/art/Redirect")
-    }
-    
     
     app.post("artcontent") { req -> HTTPResponseStatus in
         let artcontent = try req.content.decode(ArtContent.self)

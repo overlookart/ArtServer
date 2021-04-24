@@ -13,6 +13,8 @@ func demoRoutes(_ app: Application) throws {
     let http_method: PathComponent = "http_method"
     let routes_path: PathComponent = "routes_path"
     let app_grouped: PathComponent = "app_grouped"
+    let app_routes: PathComponent = "app_routes"
+    let req_redirect: PathComponent = "req_redirect"
     //组路由
     let demoRoutes = app.grouped(routeName)
     demoRoutes.get { (req) -> String in
@@ -24,8 +26,12 @@ func demoRoutes(_ app: Application) throws {
                         常见 HTTPMethod... 请访问 /\(routeName)/\(http_method)
                         -----------------------------------
                         请求路径：/pathName/pathName/... 请访问 /\(routeName)/\(routes_path)
-                        
+                        -----------------------------------
                         组路由 Route Groups... 请访问 /\(routeName)/\(app_grouped)
+                        -----------------------------------
+                        查看路由... 请访问 /\(routeName)/\(app_routes)
+                        -----------------------------------
+                        重定向 Redirections... 请访问 /\(routeName)/\(req_redirect)
                         """
         return overview
     }
@@ -61,15 +67,15 @@ func demoRoutes(_ app: Application) throws {
     
     demoRoutes.get(http_method) { (req) -> String in
         return """
-HTTP 方法
-请求的第一部分是 HTTP 方法。其中 GET 是最常见的 HTTP 方法，以下这些是经常会使用几种方法，这些 HTTP 方法通常与 CRUD 语义相关联
- Method    CURD
- GET       Read
- POST      Create
- PUT       Replace
- PATCH     Update
- DELETE    Delete
-"""
+                HTTP 方法
+                请求的第一部分是 HTTP 方法。其中 GET 是最常见的 HTTP 方法，以下这些是经常会使用几种方法，这些 HTTP 方法通常与 CRUD 语义相关联
+                Method    CURD
+                GET       Read
+                POST      Create
+                PUT       Replace
+                PATCH     Update
+                DELETE    Delete
+                """
     }
     
     demoRoutes.get(routes_path) { (req) -> String in
@@ -206,6 +212,36 @@ HTTP 方法
              }
             }
             ```
+            """
+    }
+    
+    demoRoutes.get(app_routes) { (req) -> String in
+        var routeStr = "服务器的所有路由："
+        for route in app.routes.all {
+            routeStr += "\n\(route)"
+        }
+        return routeStr
+    }
+    
+    demoRoutes.get(req_redirect) { req in
+        req.redirect(to: "\(req_redirect)/overview")
+    }
+    demoRoutes.get(req_redirect,"overview") { (req) -> String in
+        return """
+             ** 重定向(Redirections)
+             重定向在许多情况下很有用，例如将旧位置转发到SEO的新位置，将未经身份验证的用户重定向到登录页面或保持与新版本API的向后兼容性。
+             要重定向请求，请使用：
+             ```
+             req.redirect(to: "/some/new/path")
+             ```
+             您还可以指定重定向的类型，例如，永久重定向页面（以便正确更新您的SEO）使用：
+             ```
+             req.redirect(to: "/some/new/path", type: .permanent)
+             ```
+             不同的RedirectType是：
+             .permanent-返回301永久重定向
+             .normal-返回303，请参阅其他重定向。 这是Vapor的默认设置，它告诉客户端使用GET请求进行重定向。
+             .temporary-返回307临时重定向。 这告诉客户端保留请求中使用的HTTP方法。
             """
     }
     
