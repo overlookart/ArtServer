@@ -15,6 +15,7 @@ func demoRoutes(_ app: Application) throws {
     let app_grouped: PathComponent = "app_grouped"
     let app_routes: PathComponent = "app_routes"
     let req_redirect: PathComponent = "req_redirect"
+    let req_content: PathComponent = "req_content"
     //组路由
     let demoRoutes = app.grouped(routeName)
     demoRoutes.get { (req) -> String in
@@ -32,6 +33,8 @@ func demoRoutes(_ app: Application) throws {
                         查看路由... 请访问 /\(routeName)/\(app_routes)
                         -----------------------------------
                         重定向 Redirections... 请访问 /\(routeName)/\(req_redirect)
+                        -----------------------------------
+                        请求参数... 请访问 /\(routeName)/\(req_content)
                         """
         return overview
     }
@@ -243,6 +246,10 @@ func demoRoutes(_ app: Application) throws {
              .normal-返回303，请参阅其他重定向。 这是Vapor的默认设置，它告诉客户端使用GET请求进行重定向。
              .temporary-返回307临时重定向。 这告诉客户端保留请求中使用的HTTP方法。
             """
+    }
+    
+    demoRoutes.get(req_content) { (req) -> String in
+        return "正在构建中..."
     }
     
 }
