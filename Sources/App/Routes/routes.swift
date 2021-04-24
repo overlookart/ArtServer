@@ -135,6 +135,4 @@ func routes(_ app: Application) throws {
         try ArtUser.validate(content: req)
         return user
     }
-    
-    print("已注册的全部路由---",app.routes.all)
 }
