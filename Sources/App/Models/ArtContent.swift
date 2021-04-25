@@ -9,7 +9,7 @@ import Foundation
 import Vapor
 /**
  内容(Content)
- Vapor的内容API允许您轻松地将可编码/解码可编码结构到/从HTTP消息。默认情况下，JSON编码与开箱即用支持URL编码表单和多部分一起使用。API也是可配置的，允许您添加、修改或替换某些HTTP内容类型的编码策略。
+ Vapor的 Content API允许您轻松地将可编码/解码可编码结构到/从HTTP消息。默认情况下，JSON编码与开箱即用支持URL编码表单和多部分一起使用。API也是可配置的，允许您添加、修改或替换某些HTTP内容类型的编码策略。
  
  概览(Overview)
  要了解Vapor的内容API是如何工作的，您应该首先了解一些关于HTTP消息的基本知识。看一下下面的示例请求。
@@ -21,7 +21,7 @@ import Vapor
  {"hello": "world"}
  ```
  
- 此请求表明它使用内容类型标头和application / json媒体类型包含JSON编码的数据。 如承诺的那样，一些JSON数据紧随正文中的标头之后。
+ 此请求表明它使用内容类型标头和application/json媒体类型包含JSON编码的数据。 如承诺的那样，一些JSON数据紧随正文中的标头之后。
  
  内容结构(Content Struct)
  解码此HTTP消息的第一步是创建一个与预期结构匹配的可编码类型。

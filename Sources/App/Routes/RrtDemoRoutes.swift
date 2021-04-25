@@ -37,7 +37,7 @@ func demoRoutes(_ app: Application) throws {
                         请求参数... 请访问 /\(routeName)/\(req_content)
                         """
         return overview
-    }
+    }.description("Demo 目录")
     
     
     
@@ -249,7 +249,36 @@ func demoRoutes(_ app: Application) throws {
     }
     
     demoRoutes.get(req_content) { (req) -> String in
-        return "正在构建中..."
+        return """
+         基于 Vapor 的 content API，你可以轻松地对 HTTP 消息中的可编码结构进行编码/解码。
+         默认使用JSON编码，并支持URL-Encoded Form和Multipart。
+         content API 可以灵活配置，允许你为某些 HTTP 请求类型添加、修改或替换编码策略。
+
+        解码一个 Http 请求参数，我们首先要创建一个与预期结构想匹配的 Codable 数据类型。
+        数据类型遵循 Content 协议，将同时支持 Codable 协议规则，符合 Content API 的其他程序代码
+        ----------------------------------------
+        get  请求参数...      /\(req_content)/user?name=&age=&email=
+        post 请求参数...      /\(req_content)/user  {name=?,age=?,email=?}
+
+        """
+    }
+    
+    demoRoutes.get(req_content, "user") { (req) -> DemoUser in
+        //验证参数 get query 验证
+        try DemoUser.validate(query: req)
+        //get 使用查询 解码参数
+        let user = try req.query.decode(DemoUser.self)
+        print(user)
+        return user
+    }
+    
+    demoRoutes.post(req_content, "user") { (req) -> DemoUser in
+        //验证参数 post content 验证
+        try DemoUser.validate(content: req)
+        //post 使用content 解码参数
+        let user = try req.content.decode(DemoUser.self)
+        print(user)
+        return user
     }
     
 }
