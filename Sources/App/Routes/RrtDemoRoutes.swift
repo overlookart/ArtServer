@@ -306,6 +306,16 @@ func demoRoutes(_ app: Application) throws {
                 print("Post 调用外部资源",response)
                 return "c"
             }
+            
+            eventLoopFuture.whenComplete { (result) in
+                switch result {
+                case .success(let str):
+                    print("请求外部资源成功：", str)
+                case .failure(let err):
+                    print("请求外部资源失败：", err)
+                }
+                
+            }
         }
         
         return "a"
