@@ -16,6 +16,7 @@ func demoRoutes(_ app: Application) throws {
     let app_routes: PathComponent = "app_routes"
     let req_redirect: PathComponent = "req_redirect"
     let req_content: PathComponent = "req_content"
+    let req_client: PathComponent = "req_client"
     //组路由
     let demoRoutes = app.grouped(routeName)
     demoRoutes.get { (req) -> String in
@@ -35,6 +36,8 @@ func demoRoutes(_ app: Application) throws {
                         重定向 Redirections... 请访问 /\(routeName)/\(req_redirect)
                         -----------------------------------
                         请求参数... 请访问 /\(routeName)/\(req_content)
+                        -----------------------------------
+                        调用外部资源... 请访问 /\(routeName)/\(req_client)/get
                         """
         return overview
     }.description("Demo 目录")
@@ -281,4 +284,30 @@ func demoRoutes(_ app: Application) throws {
         return user
     }
     
+    demoRoutes.get(req_client, ":http_method") { (req) -> String in
+        print(req.parameters)
+        guard let http_method = req.parameters.get("http_method") else {
+            return "无法获取调用外部资源的http方法"
+        }
+        
+        print("开始调用外部资源")
+        if http_method == "get" {
+            _ = req.client.get("https://httpbin.org/status/200").map { (response) -> (String) in
+                print("Get 调用外部资源",response)
+                return "b"
+            }
+        } else if http_method == "post" {
+            let eventLoopFuture: EventLoopFuture = req.client.post("https://httpbin.org/status/200") {req in
+                // 将查询参数加入请求的 URL
+                try req.query.encode(["q" : "test"])
+                // 将 JSON 添加到请求体
+                try req.content.encode(["hello": "world"])
+            }.map { (response) -> (String) in
+                print("Post 调用外部资源",response)
+                return "c"
+            }
+        }
+        
+        return "a"
+    }
 }
