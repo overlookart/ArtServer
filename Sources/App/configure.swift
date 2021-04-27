@@ -7,10 +7,21 @@ import Vapor
 public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
-
+    app.databases.use(.postgres(hostname: "localhost", username: "vapor", password: "vapor"), as: .psql)
     // register routes
     try routes(app)
     try demoRoutes(app)
+    switch app.environment {
+    case .development:
+        print("开发环境")
+        
+    case .production:
+        print("正式环境")
+    case .testing:
+        print("测试环境")
+    default: break
+        
+    }
 }
 
 

@@ -1,6 +1,8 @@
 import App
 import Vapor
-
+/**
+ Environment 运行环境
+ */
 var env = try Environment.detect()
 try LoggingSystem.bootstrap(from: &env)
 let app = Application(env)
