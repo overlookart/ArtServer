@@ -316,6 +316,16 @@ func demoRoutes(_ app: Application) throws {
                 }
                 
             }
+        } else if http_method == "get_json" {
+            
+            req.client.get("https://httpbin.org/json").flatMapThrowing { response -> tJson in
+                print("开始解析数据",response)
+                let json = try response.content.decode(tJson.self)
+                print("解析完数据",json)
+                return json
+            }.map { (content) -> (tJson) in
+                return content
+            }
         }
         
         return "a"

@@ -46,3 +46,14 @@ extension DemoUser: Validatable {
         validations.add("email", as: String.self, is: .email)
     }
 }
+
+struct SlideShow: Content {
+    var author: String
+    var date: String
+}
+
+struct tJson: Content {
+    var slideshow: SlideShow
+}
+
+

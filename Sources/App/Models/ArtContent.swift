@@ -249,38 +249,7 @@ struct ArtContent: Content {
 /**
  Client http 调用外部资源
  Vapor的客户端API允许您对外部资源进行HTTP调用。 它基于async-http-client构建，并与内容API集成。
- *Overview*
- 您可以通过应用程序或通过请求在路由处理程序中访问默认客户端。
- ```
- app.client // Client
- app.get("test") { req in
-     req.client // Client
- }
- ```
- 应用程序的客户端对于在配置期间发出HTTP请求很有用。 如果要在路由处理程序中发出HTTP请求，请始终使用请求的客户端。
  
- Methods
- 要发出GET请求，请将所需的URL传递给get便捷方法。
- ```
- req.client.get("https://httpbin.org/status/200").map { res in
-     // Handle the response.
- }
- ```
- 
- 每个HTTP动词都有一些方法，例如get，post和delete。 客户端的响应将在将来返回，并包含HTTP状态，标头和正文。
- 
- Content
- Vapor的内容API可用于处理客户请求和响应中的数据。 要将内容或查询参数编码为请求，请使用beforeSend闭包。
- ```
- req.client.post("https://httpbin.org/status/200") { req in
-     // Encode query string to the request URL.
-     try req.query.encode(["q": "test"])
-
-     // Encode JSON to the request body.
-     try req.content.encode(["hello": "world"])
- }.map { res in
-     // Handle the response.
- }
  ```
  要从响应中解码内容，请在客户端的响应未来使用flatMapThrowing。
  ```
