@@ -289,8 +289,8 @@ func demoRoutes(_ app: Application) throws {
         guard let http_method = req.parameters.get("http_method") else {
             return "无法获取调用外部资源的http方法"
         }
-        
-        print("开始调用外部资源")
+        //日志
+        req.logger.info("开始调用外部资源")
         if http_method == "get" {
             _ = req.client.get("https://httpbin.org/status/200").map { (response) -> (String) in
                 print("Get 调用外部资源",response)
