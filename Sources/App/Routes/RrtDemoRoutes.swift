@@ -17,6 +17,8 @@ func demoRoutes(_ app: Application) throws {
     let req_redirect: PathComponent = "req_redirect"
     let req_content: PathComponent = "req_content"
     let req_client: PathComponent = "req_client"
+    let database_query: PathComponent = "database_query"
+    
     //组路由
     let demoRoutes = app.grouped(routeName)
     demoRoutes.get { (req) -> String in
@@ -262,17 +264,23 @@ func demoRoutes(_ app: Application) throws {
         ----------------------------------------
         get  请求参数...      /\(req_content)/user?name=&age=&email=
         post 请求参数...      /\(req_content)/user  {name=?,age=?,email=?}
-
+        database 查询用户...     /\(req_content)/\(database_query)
         """
     }
     
-    demoRoutes.get(req_content, "user") { (req) -> DemoUser in
+    demoRoutes.get(req_content, "user") { (req) -> EventLoopFuture<demouser> in
         //验证参数 get query 验证
         try DemoUser.validate(query: req)
         //get 使用查询 解码参数
-        let user = try req.query.decode(DemoUser.self)
-        print(user)
-        return user
+        let dbuser = try req.query.decode(demouser.self)
+        req.logger.info("数据库 存储用户数据")
+        let d = dbuser.create(on: req.db).map { () -> (demouser) in
+            dbuser
+        }
+        d.whenFailure { (err) in
+            req.logger.debug("\(err)")
+        }
+        return d
     }
     
     demoRoutes.post(req_content, "user") { (req) -> DemoUser in
@@ -283,6 +291,15 @@ func demoRoutes(_ app: Application) throws {
         print(user)
         return user
     }
+    
+    demoRoutes.get(req_content, database_query) { (req) -> String in
+        let result = demouser.query(on: req.db).all()
+        result.whenComplete { (r) in
+            
+        }
+        return ""
+    }
+    
     
     demoRoutes.get(req_client, ":http_method") { (req) -> String in
         print(req.parameters)

@@ -7,9 +7,12 @@ import Vapor
 public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+
     app.logger.info("app ****** 开始配置")
     app.logger.info("app ----- 配置数据库")
-    app.databases.use(.postgres(hostname: "localhost", username: "vapor", password: "vapor"), as: .psql)
+    app.databases.use(.postgres(hostname: "localhost", username: "caigou", password: ""), as: .psql)
+    
+
     app.logger.info("app ----- 配置生命周期")
     app.lifecycle.use(AppLifecycleHandler())
     app.logger.info("app ----- 配置路由")
