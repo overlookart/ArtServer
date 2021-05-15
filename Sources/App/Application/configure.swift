@@ -10,14 +10,25 @@ public func configure(_ app: Application) throws {
 
     app.logger.info("app ****** 开始配置")
     app.logger.info("app ----- 配置数据库")
-    app.databases.use(.postgres(hostname: "localhost", username: "caigou", password: ""), as: .psql)
     
-
+    app.databases.use(.postgres(hostname: "127.0.0.1", port: 5432, username: "xzh", password: "123456",database: "mydb"), as: .psql, isDefault: true)
+    app.logger.info("app ----- 注册数据库迁移")
+    app.migrations.add(CreateDemouser(), to: .psql)
+    app.migrations.add(UpdateDemouser_V3(), to: .psql)
+    /**
+     xcode 配置启动命令 迁移数据库
+     edit scheme -> run -> arguments passed on lauch
+     migrate 迁移
+     migrate --revert 恢复
+     */
+    
     app.logger.info("app ----- 配置生命周期")
     app.lifecycle.use(AppLifecycleHandler())
+    
     app.logger.info("app ----- 配置路由")
     try routes(app)
     try demoRoutes(app)
+    
     app.logger.info("app ----- 运行环境")
     switch app.environment {
     case .development:

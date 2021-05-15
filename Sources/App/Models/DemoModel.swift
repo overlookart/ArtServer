@@ -53,10 +53,9 @@ final class demouser: Model, Content {
     @Timestamp(key: "updated_at", on: .update)
     var updatedAt: Date?
     //删除时的时间 软删除 soft delete 时间戳格式 /.default /.iso8601 /.unix
-    @Timestamp(key: "deleted_at", on: .delete, format: .iso8601)
+    @Timestamp(key: "deleted_at", on: .delete)
     var deleteAt: Date?
     
-    var nonedAt: Date?
     
     
     

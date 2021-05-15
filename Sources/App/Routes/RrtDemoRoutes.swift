@@ -18,6 +18,7 @@ func demoRoutes(_ app: Application) throws {
     let req_content: PathComponent = "req_content"
     let req_client: PathComponent = "req_client"
     let database_query: PathComponent = "database_query"
+    let database_create: PathComponent = "database_create"
     
     //组路由
     let demoRoutes = app.grouped(routeName)
@@ -264,23 +265,20 @@ func demoRoutes(_ app: Application) throws {
         ----------------------------------------
         get  请求参数...      /\(req_content)/user?name=&age=&email=
         post 请求参数...      /\(req_content)/user  {name=?,age=?,email=?}
-        database 查询用户...     /\(req_content)/\(database_query)
+        
+        get  创建用户...      /\(req_content)/\(database_create)/user?name=&age=&email=
+        post 创建用户...      /\(req_content)/\(database_create)/user  {name=?,age=?,email=?}
+        database 查询用户...     /\(req_content)/\(database_query)/user
         """
     }
     
-    demoRoutes.get(req_content, "user") { (req) -> EventLoopFuture<demouser> in
+    demoRoutes.get(req_content, "user") { (req) -> DemoUser in
         //验证参数 get query 验证
         try DemoUser.validate(query: req)
         //get 使用查询 解码参数
-        let dbuser = try req.query.decode(demouser.self)
-        req.logger.info("数据库 存储用户数据")
-        let d = dbuser.create(on: req.db).map { () -> (demouser) in
-            dbuser
-        }
-        d.whenFailure { (err) in
-            req.logger.debug("\(err)")
-        }
-        return d
+        let user = try req.query.decode(DemoUser.self)
+        print(user)
+        return user
     }
     
     demoRoutes.post(req_content, "user") { (req) -> DemoUser in
@@ -292,12 +290,35 @@ func demoRoutes(_ app: Application) throws {
         return user
     }
     
-    demoRoutes.get(req_content, database_query) { (req) -> String in
+    demoRoutes.get(req_content, database_create, "user") { (req) -> EventLoopFuture<demouser> in
+        let dbuser = try req.query.decode(demouser.self)
+        req.logger.info("数据库 存储用户数据")
+        let d = dbuser.create(on: req.db).map { () -> (demouser) in
+            dbuser
+        }
+        d.whenFailure { (err) in
+            req.logger.debug("\(err)")
+        }
+        d.whenSuccess { demouser in
+            req.logger.debug("\(demouser)")
+        }
+        return d
+    }
+    
+    demoRoutes.post(req_content, database_create, "user") { (req) -> EventLoopFuture<demouser> in
+        let dbuser = try req.content.decode(demouser.self)
+        let d = dbuser.create(on: req.db).map { () -> demouser in
+            dbuser
+        }
+        return d
+    }
+    
+    demoRoutes.get(req_content, database_query, "user") { (req) -> EventLoopFuture<[demouser]> in
         let result = demouser.query(on: req.db).all()
         result.whenComplete { (r) in
-            
+            req.logger.debug("数据库查询结果:\(r)")
         }
-        return ""
+        return result
     }
     
     
