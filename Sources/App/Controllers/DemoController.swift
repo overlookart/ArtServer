@@ -2,12 +2,13 @@
 //  File.swift
 //  
 //
-//  Created by xzh on 2021/4/24.
+//  Created by xzh on 2021/5/16.
 //
-import Vapor
+
 import Foundation
-func demoRoutes(_ app: Application) throws {
-    /*
+import Vapor
+import Fluent
+struct DemoController: RouteCollection {
     let routeName: PathComponent = "demoroutes"
     let app_on: PathComponent = "app_on"
     let app_method: PathComponent = "app_method"
@@ -20,18 +21,26 @@ func demoRoutes(_ app: Application) throws {
     let req_client: PathComponent = "req_client"
     let database_query: PathComponent = "database_query"
     let database_create: PathComponent = "database_create"
- */
+    func boot(routes: RoutesBuilder) throws {
+        let demoRoute = routes.grouped(routeName)
+        demoRoute.get(use: overview(req:))
+        demoRoute.get(app_on, use: appOn(req:))
+        demoRoute.get(app_method, use: appMethod(req:))
+        demoRoute.get(http_method, use: httpMethod(req:))
+        demoRoute.get(routes_path, use: routesPath(req:))
+        demoRoute.get(app_grouped, use: appGrouped(req:))
+        demoRoute.get(app_routes, use: appRoutes(req:))
+        demoRoute.get(req_redirect, use: reqRedirect(req:))
+        demoRoute.get(req_redirect, "overview", use: redirect(req:))
+        demoRoute.get(req_client, ":http_method", use: reqClient(req:))
+        demoRoute.get(req_content, use: reqContent(req:))
+        demoRoute.get(req_content, "user", use: user(req:))
+        demoRoute.post(req_content, "user", use: user(req:))
+        demoRoute.get(req_content, database_create, "user", use: createUser(req:))
+        demoRoute.post(req_content, database_create, "user", use: createUser(req:))
+    }
     
-    /**
-     routes 迁移到 controller
-     */
-    try app.register(collection: DemoController())
-    
-    
-    /*
-    //组路由
-    let demoRoutes = app.grouped(routeName)
-    demoRoutes.get { (req) -> String in
+    func overview(req: Request) throws -> String  {
         let overview = """
                         Vapor 的两种路由方法
                         app.on(method:... 请访问 /\(routeName)/\(app_on)
@@ -52,27 +61,24 @@ func demoRoutes(_ app: Application) throws {
                         调用外部资源... 请访问 /\(routeName)/\(req_client)/get
                         """
         return overview
-    }.description("Demo 目录")
+    }
     
-    
-    
-    app.on(.GET, routeName, app_on) { req in
+    func appOn(req: Request) throws -> String {
         return """
-                这是一个以 app.on get 请求
+                app.on get 请求方式说明
                 method 为 http 方法
                 path 为路由路径
                 use 为请求闭包
                 app.on(method: HTTPMethod, path: PathComponent..., use: (Request) throws -> ResponseEncodable)
-
                 """
     }
     
-    app.get(routeName, app_method) { (req) -> String in
+    func appMethod(req: Request) throws -> String {
         return """
-                这是一个以 app.method get 请求
+                app.method get app请求方式说明
                 method 为 http 方法
                 path 为路由路径
-                use 为请求闭包 
+                use 为请求闭包
                 app.get(path: PathComponent..., use: (Request) throws -> ResponseEncodable)
                 路由处理程序支持返回 ResponseEncodable 的任何内容。这包括 Content 和将来值为 ResponseEncodable 的 EventLoopFuture。
                 你可以在 in 之前使用 -> T 来指定路线的返回类型。这在编译器无法确定返回类型的情况下很有用。
@@ -82,8 +88,7 @@ func demoRoutes(_ app: Application) throws {
                 """
     }
     
-    
-    demoRoutes.get(http_method) { (req) -> String in
+    func httpMethod(req: Request) throws -> String {
         return """
                 HTTP 方法
                 请求的第一部分是 HTTP 方法。其中 GET 是最常见的 HTTP 方法，以下这些是经常会使用几种方法，这些 HTTP 方法通常与 CRUD 语义相关联
@@ -96,9 +101,9 @@ func demoRoutes(_ app: Application) throws {
                 """
     }
     
-    demoRoutes.get(routes_path) { (req) -> String in
+    func routesPath(req: Request) throws -> String {
         return """
-                路由路径
+                路由路径说明
                 在 HTTP 方法之后是请求的 URI。它由以 / 开头的路径和在 ? 之后的可选查询字符串组成。HTTP 方法和路径是 Vapor 用于路由请求的方法
                 路由为给定的 HTTP 方法和 URI 路径指定请求处理程序。它还可以存储其他元数据
                 可以使用多种 HTTP 方法帮助程序将路由直接注册到你的 Application
@@ -171,7 +176,7 @@ func demoRoutes(_ app: Application) throws {
                 """
     }
     
-    demoRoutes.get(app_grouped) { (req) -> String in
+    func appGrouped(req: Request) throws -> String {
         return """
              通过路由分组，您可以创建带有路径前缀或特定中间件的一组路由。 分组支持基于构建器和闭包的语法。
              所有分组方法均返回RouteBuilder，这意味着您可以将组与其他路由构建方法无限地混合，匹配和嵌套。
@@ -233,18 +238,19 @@ func demoRoutes(_ app: Application) throws {
             """
     }
     
-    demoRoutes.get(app_routes) { (req) -> String in
+    func appRoutes(req: Request) throws -> String {
         var routeStr = "服务器的所有路由："
-        for route in app.routes.all {
+        for route in req.application.routes.all {
             routeStr += "\n\(route)"
         }
         return routeStr
     }
     
-    demoRoutes.get(req_redirect) { req in
-        req.redirect(to: "\(req_redirect)/overview")
+    func reqRedirect(req: Request) throws -> Response {
+        return req.redirect(to: "\(req_redirect)/overview")
     }
-    demoRoutes.get(req_redirect,"overview") { (req) -> String in
+    
+    func redirect(req: Request) throws -> String {
         return """
              ** 重定向(Redirections)
              重定向在许多情况下很有用，例如将旧位置转发到SEO的新位置，将未经身份验证的用户重定向到登录页面或保持与新版本API的向后兼容性。
@@ -263,75 +269,7 @@ func demoRoutes(_ app: Application) throws {
             """
     }
     
-    demoRoutes.get(req_content) { (req) -> String in
-        return """
-         基于 Vapor 的 content API，你可以轻松地对 HTTP 消息中的可编码结构进行编码/解码。
-         默认使用JSON编码，并支持URL-Encoded Form和Multipart。
-         content API 可以灵活配置，允许你为某些 HTTP 请求类型添加、修改或替换编码策略。
-
-        解码一个 Http 请求参数，我们首先要创建一个与预期结构想匹配的 Codable 数据类型。
-        数据类型遵循 Content 协议，将同时支持 Codable 协议规则，符合 Content API 的其他程序代码
-        ----------------------------------------
-        get  请求参数...      /\(req_content)/user?name=&age=&email=
-        post 请求参数...      /\(req_content)/user  {name=?,age=?,email=?}
-        
-        get  创建用户...      /\(req_content)/\(database_create)/user?name=&age=&email=
-        post 创建用户...      /\(req_content)/\(database_create)/user  {name=?,age=?,email=?}
-        database 查询用户...     /\(req_content)/\(database_query)/user
-        """
-    }
-    
-    demoRoutes.get(req_content, "user") { (req) -> DemoUser in
-        //验证参数 get query 验证
-        try DemoUser.validate(query: req)
-        //get 使用查询 解码参数
-        let user = try req.query.decode(DemoUser.self)
-        print(user)
-        return user
-    }
-    
-    demoRoutes.post(req_content, "user") { (req) -> DemoUser in
-        //验证参数 post content 验证
-        try DemoUser.validate(content: req)
-        //post 使用content 解码参数
-        let user = try req.content.decode(DemoUser.self)
-        print(user)
-        return user
-    }
-    
-    demoRoutes.get(req_content, database_create, "user") { (req) -> EventLoopFuture<demouser> in
-        let dbuser = try req.query.decode(demouser.self)
-        req.logger.info("数据库 存储用户数据")
-        let d = dbuser.create(on: req.db).map { () -> (demouser) in
-            dbuser
-        }
-        d.whenFailure { (err) in
-            req.logger.debug("\(err)")
-        }
-        d.whenSuccess { demouser in
-            req.logger.debug("\(demouser)")
-        }
-        return d
-    }
-    
-    demoRoutes.post(req_content, database_create, "user") { (req) -> EventLoopFuture<demouser> in
-        let dbuser = try req.content.decode(demouser.self)
-        let d = dbuser.create(on: req.db).map { () -> demouser in
-            dbuser
-        }
-        return d
-    }
-    
-    demoRoutes.get(req_content, database_query, "user") { (req) -> EventLoopFuture<[demouser]> in
-        let result = demouser.query(on: req.db).all()
-        result.whenComplete { (r) in
-            req.logger.debug("数据库查询结果:\(r)")
-        }
-        return result
-    }
-    
-    
-    demoRoutes.get(req_client, ":http_method") { (req) -> String in
+    func reqClient(req: Request) throws -> String {
         print(req.parameters)
         guard let http_method = req.parameters.get("http_method") else {
             return "无法获取调用外部资源的http方法"
@@ -376,5 +314,59 @@ func demoRoutes(_ app: Application) throws {
         }
         
         return "a"
-    }*/
+    }
+    
+    func reqContent(req: Request) -> String {
+        return """
+         基于 Vapor 的 content API，你可以轻松地对 HTTP 消息中的可编码结构进行编码/解码。
+         默认使用JSON编码，并支持URL-Encoded Form和Multipart。
+         content API 可以灵活配置，允许你为某些 HTTP 请求类型添加、修改或替换编码策略。
+
+        解码一个 Http 请求参数，我们首先要创建一个与预期结构想匹配的 Codable 数据类型。
+        数据类型遵循 Content 协议，将同时支持 Codable 协议规则，符合 Content API 的其他程序代码
+        ----------------------------------------
+        get  请求参数...      /\(req_content)/user?name=&age=&email=
+        post 请求参数...      /\(req_content)/user  {name=?,age=?,email=?}
+        
+        get  创建用户...      /\(req_content)/\(database_create)/user?name=&age=&email=
+        post 创建用户...      /\(req_content)/\(database_create)/user  {name=?,age=?,email=?}
+        database 查询用户...     /\(req_content)/\(database_query)/user
+        """
+    }
+    
+    func user(req: Request) throws -> DemoUser {
+        /**
+         1.判断请求方式
+         2.请求参数验证
+         3.解码参数，生成数据模型
+         */
+        if req.method == .POST {
+            try DemoUser.validate(content: req)
+            let user = try req.content.decode(DemoUser.self)
+            return user
+        }else{
+            try DemoUser.validate(query: req)
+            let user = try req.query.decode(DemoUser.self)
+            return user
+        }
+    }
+    
+    func createUser(req: Request) throws -> EventLoopFuture<demouser> {
+        var dbuser: demouser
+        if req.method == .POST {
+            dbuser = try req.content.decode(demouser.self)
+        }else{
+            dbuser = try req.query.decode(demouser.self)
+        }
+        let d = dbuser.create(on: req.db).map { () -> (demouser) in
+            dbuser
+        }
+        d.whenFailure { (err) in
+            req.logger.debug("\(err)")
+        }
+        d.whenSuccess { demouser in
+            req.logger.debug("\(demouser)")
+        }
+        return d
+    }
 }
