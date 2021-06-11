@@ -30,7 +30,9 @@ public func configure(_ app: Application) throws {
     try demoRoutes(app)
     
     app.logger.info("app ----- 运行环境")
+    //访问当前环境
     switch app.environment {
+    //可以配置不同环境下的数据库
     case .development:
         app.logger.info("app ----- 开发环境")
     case .production:

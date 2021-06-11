@@ -14,7 +14,7 @@ var env = try Environment.detect()
 var foo = Environment.get("FOO")
 //查询环境变量
 foo = Environment.process.FOO
-print(foo)
+
 
 /**
  系统日志
