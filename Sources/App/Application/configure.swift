@@ -7,7 +7,6 @@ import Vapor
 public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
-
     app.logger.info("app ****** 开始配置")
     app.logger.info("app ----- 配置数据库")
     
