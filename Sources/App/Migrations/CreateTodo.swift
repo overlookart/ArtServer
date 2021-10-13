@@ -23,6 +23,7 @@ struct CreateDemouser: Migration {
             .field("email", .string)
             .field("created_at", .date)
             .field("updated_at", .date)
+            .field("deleted_at", .date)
             .create()
         
     }

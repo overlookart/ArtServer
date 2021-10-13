@@ -10,10 +10,10 @@ public func configure(_ app: Application) throws {
     ArtLogger.artLogger().info("app ****** 开始配置")
     ArtLogger.artLogger().info("app ----- 配置数据库")
     
-    app.databases.use(.postgres(hostname: "127.0.0.1", port: 5432, username: "xzh", password: "123456",database: "mydb"), as: .psql, isDefault: true)
+    app.databases.use(.postgres(hostname: "127.0.0.1", port: 5432, username: "xxx", password: "***",database: "dbName"), as: .psql, isDefault: true)
     ArtLogger.artLogger().info("app ----- 注册数据库迁移")
     app.migrations.add(CreateDemouser(), to: .psql)
-    app.migrations.add(UpdateDemouser_V3(), to: .psql)
+//    app.migrations.add(UpdateDemouser_V3(), to: .psql)
     /**
      xcode 配置启动命令 迁移数据库
      edit scheme -> run -> arguments passed on lauch
