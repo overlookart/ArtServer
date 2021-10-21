@@ -384,6 +384,70 @@ struct DemoController: RouteCollection {
     /// - Parameter req: 请求体
     /// - Returns: <#description#>
     func queryUser(req: Request) throws -> EventLoopFuture<[demouser]> {
+        /**
+         Fluent 的query API 允许您从数据库中create、read、update和delete模型
+         它支持过滤results、joins、chunking、aggregates等
+         */
+        
+        /**
+         查询构建器(Query builders)
+         查询构建器绑定到单个模型类型，可以使用静态查询方法创建
+         它们也可以通过将模型类型传递给数据库对象上的查询方法来创建
+         */
+        //创建查询构建器
+        let queryBuilder = demouser.query(on: req.db)
+        
+        /**
+         All
+         all() 方法返回一个模型数组
+         all 方法还支持仅从结果集中获取单个字段
+         */
+        queryBuilder.all(\.$name)
+        
+        /**
+         First
+         first() 方法返回一个单一的、可选的模型
+         如果查询产生多个模型，则只返回第一个
+         如果查询没有结果，则返回 nil
+         此方法可以与 unwrap(or:) 结合使用以返回非可选模型或抛出错误
+         */
+        queryBuilder.first()
+        
+        /**
+         过滤器(Filter)
+         filter 方法允许过滤结果集中包含的模型。 此方法有多个重载
+         */
+        
+        /**
+         值过滤(Value Filter)
+         接受带有值的运算符表达式 ==, !=, >=, >, <, <=
+         这些运算符表达式接受左侧的字段键路径和右侧的值
+         提供的值必须与字段的预期值类型匹配并绑定到结果查询
+         */
+        queryBuilder.filter(\.$age == 24).first()
+        
+        /**
+         字段过滤(Field Filter)
+         支持比较两个字段
+         字段过滤器支持与值过滤器相同的运算符
+         */
+//        queryBuilder.filter(\.$createdAt == \.$updatedAt)
+        
+        /**
+         子级过滤器(Subset Filter)
+         支持检查一个字段的值是否存在于给定的一组值中
+         提供的值集可以是任何 Swift 集合，其元素类型与字段的值类型匹配
+         ~~ 集合中存在该值 !~ 集合中不存在该值
+         */
+        queryBuilder.filter(\.$name ~~ ["abc", "xxx"]).all()
+        
+        /**
+         包含过滤器(Contains Filter)
+         支持检查字符串字段的值是否包含给定的子字符串
+         ~~包含子串 !~ 不包含子串 =~ 前缀匹配 !=~ 不匹配前缀 ~= 后缀匹配 !~= 不后缀匹配
+         */
+        queryBuilder.filter(\.$name =~ "x")
+        
         let users =  demouser.query(on: req.db).all()
         return users
     }
