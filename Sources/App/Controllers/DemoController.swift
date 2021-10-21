@@ -402,7 +402,7 @@ struct DemoController: RouteCollection {
          all() 方法返回一个模型数组
          all 方法还支持仅从结果集中获取单个字段
          */
-        queryBuilder.all(\.$name)
+        _ = queryBuilder.all(\.$name)
         
         /**
          First
@@ -411,7 +411,7 @@ struct DemoController: RouteCollection {
          如果查询没有结果，则返回 nil
          此方法可以与 unwrap(or:) 结合使用以返回非可选模型或抛出错误
          */
-        queryBuilder.first()
+        _ = queryBuilder.first()
         
         /**
          过滤器(Filter)
@@ -424,7 +424,7 @@ struct DemoController: RouteCollection {
          这些运算符表达式接受左侧的字段键路径和右侧的值
          提供的值必须与字段的预期值类型匹配并绑定到结果查询
          */
-        queryBuilder.filter(\.$age == 24).first()
+        _ = queryBuilder.filter(\.$age == 24).first()
         
         /**
          字段过滤(Field Filter)
@@ -439,14 +439,14 @@ struct DemoController: RouteCollection {
          提供的值集可以是任何 Swift 集合，其元素类型与字段的值类型匹配
          ~~ 集合中存在该值 !~ 集合中不存在该值
          */
-        queryBuilder.filter(\.$name ~~ ["abc", "xxx"]).all()
+        _ = queryBuilder.filter(\.$name ~~ ["abc", "xxx"]).all()
         
         /**
          包含过滤器(Contains Filter)
          支持检查字符串字段的值是否包含给定的子字符串
          ~~包含子串 !~ 不包含子串 =~ 前缀匹配 !=~ 不匹配前缀 ~= 后缀匹配 !~= 不后缀匹配
          */
-        queryBuilder.filter(\.$name =~ "x")
+        _ = queryBuilder.filter(\.$name =~ "x").all()
         
         let users =  demouser.query(on: req.db).all()
         return users
