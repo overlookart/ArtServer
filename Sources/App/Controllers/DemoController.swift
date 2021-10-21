@@ -34,10 +34,14 @@ struct DemoController: RouteCollection {
         demoRoute.get(req_redirect, "overview", use: redirect(req:))
         demoRoute.get(req_client, ":http_method", use: reqClient(req:))
         demoRoute.get(req_content, use: reqContent(req:))
+        
         demoRoute.get(req_content, "user", use: user(req:))
         demoRoute.post(req_content, "user", use: user(req:))
+        //创建用户
         demoRoute.get(req_content, database_create, "user", use: createUser(req:))
         demoRoute.post(req_content, database_create, "user", use: createUser(req:))
+        //查询用户
+        demoRoute.get(req_content, database_query, "user", use: queryUser(req:))
     }
     
     func overview(req: Request) throws -> String  {
@@ -316,6 +320,9 @@ struct DemoController: RouteCollection {
         return "a"
     }
     
+    /// 请求参数文档说明
+    /// - Parameter req: 请求体
+    /// - Returns: 文档文案
     func reqContent(req: Request) -> String {
         return """
          基于 Vapor 的 content API，你可以轻松地对 HTTP 消息中的可编码结构进行编码/解码。
@@ -351,6 +358,9 @@ struct DemoController: RouteCollection {
         }
     }
     
+    /// 创建用户
+    /// - Parameter req: 请求体
+    /// - Returns: <#description#>
     func createUser(req: Request) throws -> EventLoopFuture<demouser> {
         var dbuser: demouser
         if req.method == .POST {
@@ -368,5 +378,13 @@ struct DemoController: RouteCollection {
             req.logger.debug("\(demouser)")
         }
         return d
+    }
+    
+    /// 查询用户
+    /// - Parameter req: 请求体
+    /// - Returns: <#description#>
+    func queryUser(req: Request) throws -> EventLoopFuture<[demouser]> {
+        let users =  demouser.query(on: req.db).all()
+        return users
     }
 }
