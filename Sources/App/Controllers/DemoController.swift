@@ -448,6 +448,89 @@ struct DemoController: RouteCollection {
          */
         _ = queryBuilder.filter(\.$name =~ "x").all()
         
+        /**
+         Group
+         默认情况下，添加到查询的所有过滤器都需要匹配。
+         查询构建器支持创建一组过滤器，其中只有一个过滤器必须匹配
+         group 方法支持按 and 或 or 逻辑组合过滤器 这些组可以无限嵌套
+         顶级过滤器可以被认为是在一个 and 组中
+         */
+        queryBuilder.group(.or){ group in
+            group.filter(\.$name == "xxx").filter(\.$name == "aa")
+        }
+        
+        /**
+         Aggregate
+         查询构建器支持多种方法来对一组值执行计算，例如计数或平均
+         除了 count 之外的所有aggregate方法都需要传递一个字段的关键路径。
+         count结果数 sum结果值的总和 average结果值的平均值 min最小结果 max最大结果值
+         除了 count 之外的所有Aggregate方法都返回字段的值类型作为结果。 count 总是返回一个整数
+         */
+        _ = queryBuilder.min(\.$name)
+        
+        /**
+         Chunk
+         查询构建器支持将结果集作为单独的块返回
+         这有助于您在处理大型数据库读取时控制内存使用
+         根据结果的总数，提供的闭包将被调用零次或多次
+         返回的每个项目都是一个 Result 其中包含模型或返回的尝试解码数据库条目的错误
+         */
+        _ = queryBuilder.chunk(max: 64) { result in
+            
+        }
+        
+        /**
+         Field
+         默认情况下，模型的所有字段都将通过查询从数据库中读取
+         您可以选择使用 field 方法仅选择模型字段的子集
+         查询期间未选择的任何模型字段都将处于未初始化状态
+         尝试直接访问未初始化的字段将导致致命错误
+         要检查模型的字段值是否已设置，请使用 value 属性
+         ```
+         if let name = demouser.$name.value {
+             // Name was fetched.
+         } else {
+             // Name was not fetched.
+             // Accessing `planet.name` will fail.
+         }
+         ```
+         */
+        _ = queryBuilder.field(\.$name).field(\.$id).all()
+        
+        /**
+         Unique
+         查询构建器的Unique方法仅导致返回不同的结果（无重复）
+         unique 在使用 all 获取单个字段时特别有用
+         但是，您也可以使用字段方法选择多个字段
+         由于模型标识符始终是唯一的，因此在使用 unique 时应避免选择它们
+         */
+        _ = queryBuilder.unique().all(\.$name)
+        
+        /**
+         Range
+         查询构建器的range方法允许您使用 Swift range选择结果的子集
+         range值是从零开始的无符号整数
+         */
+        _ = queryBuilder.range(..<5)
+        
+        /**
+         Join
+         查询构建器的 join 方法允许您在结果集中包含另一个模型的字段
+         可以将多个模型加入您的查询
+         ```
+         // Fetches all planets with a star named Sun.
+         Planet.query(on: database)
+             .join(Star.self, on: \Planet.$star.$id == \Star.$id)
+             .filter(Star.self, \.$name == "Sun")
+             .all()
+         ```
+         on 参数接受两个字段之间的相等表达式
+         其中一个字段必须已存在于当前结果集中
+         另一个字段必须存在于要连接的模型上
+         这些字段必须具有相同的值类型
+         */
+        
+        
         let users =  demouser.query(on: req.db).all()
         return users
     }
