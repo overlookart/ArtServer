@@ -21,6 +21,7 @@ struct DemoController: RouteCollection {
     let req_client: PathComponent = "req_client"
     let database_query: PathComponent = "database_query"
     let database_create: PathComponent = "database_create"
+    let database_update: PathComponent = "database_update"
     func boot(routes: RoutesBuilder) throws {
         let demoRoute = routes.grouped(routeName)
         demoRoute.get(use: overview(req:))
@@ -42,6 +43,8 @@ struct DemoController: RouteCollection {
         demoRoute.post(req_content, database_create, "user", use: createUser(req:))
         //查询用户
         demoRoute.get(req_content, database_query, "user", use: queryUser(req:))
+        //更新用户
+        demoRoute.post(req_content, database_update, "user", use: updateUser(req:))
     }
     
     func overview(req: Request) throws -> String  {
@@ -338,6 +341,7 @@ struct DemoController: RouteCollection {
         get  创建用户...      /\(req_content)/\(database_create)/user?name=&age=&email=
         post 创建用户...      /\(req_content)/\(database_create)/user  {name=?,age=?,email=?}
         database 查询用户...     /\(req_content)/\(database_query)/user
+        database 更新用户...  /\(req_content)/\(database_update)/user /*根据用户名更新用户信息 post*/
         """
     }
     
@@ -541,5 +545,21 @@ struct DemoController: RouteCollection {
         
         let users =  demouser.query(on: req.db).all()
         return users
+    }
+    
+    /// 更新用户
+    /// - Parameter req: 请求体
+    /// - Returns: <#description#>
+    func updateUser(req: Request) throws -> EventLoopFuture<demouser>{
+        /**
+         查询构建器支持使用 update 方法一次更新多个模型
+         update 支持 set、filter 和 range 方法
+         */
+        var newuser: demouser
+        newuser = try req.content.decode(demouser.self)
+        let queryBuilder = demouser.query(on: req.db)
+        return queryBuilder.filter(\.$name == newuser.name).set(\.$age, to: newuser.age).set(\.$email, to: newuser.email).update().map { () -> (demouser) in
+            newuser
+        }
     }
 }
