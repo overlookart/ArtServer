@@ -528,6 +528,14 @@ struct DemoController: RouteCollection {
          其中一个字段必须已存在于当前结果集中
          另一个字段必须存在于要连接的模型上
          这些字段必须具有相同的值类型
+         
+         大多数查询构建器方法，如过滤器和排序，都支持连接模型
+         如果方法支持连接模型，它将接受连接模型类型作为第一个参数
+         ```
+         .sort(Star.self, \.$name)
+         ```
+         使用连接的查询仍将返回基本模型的数组。 要访问联接模型，请使用joined方法。
+         let star = try planet.joined(Star.self)
          */
         
         
