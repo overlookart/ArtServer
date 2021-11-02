@@ -579,4 +579,30 @@ struct DemoController: RouteCollection {
             deleteuser
         }
     }
+    /**
+     Paginate 分页
+     Fluent 的查询 API 支持使用 paginate 方法自动对结果进行分页
+     ```
+     // Example of request-based pagination.
+     app.get("planets") { req in
+         try await Planet.query(on: req.db).paginate(for: req)
+     }
+     ```
+     paginate(for:) 方法将使用请求 URI 中可用的 page 和 per 参数来返回所需的结果集
+     metadata中包含有关当前页面和结果总数的元数据
+     上述请求将产生如下结构的响应
+     ```
+     {
+         "items": [...],
+         "metadata": {
+             "page": 2,
+             "per": 5,
+             "total": 8
+         }
+     }
+     ```
+     页码从 1 开始。您也可以进行手动页面请求
+     // Example of manual pagination.
+     .paginate(PageRequest(page: 1, per: 2))
+     */
 }
