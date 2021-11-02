@@ -22,6 +22,7 @@ struct DemoController: RouteCollection {
     let database_query: PathComponent = "database_query"
     let database_create: PathComponent = "database_create"
     let database_update: PathComponent = "database_update"
+    let database_delete: PathComponent = "database_delete"
     func boot(routes: RoutesBuilder) throws {
         let demoRoute = routes.grouped(routeName)
         demoRoute.get(use: overview(req:))
@@ -45,6 +46,8 @@ struct DemoController: RouteCollection {
         demoRoute.get(req_content, database_query, "user", use: queryUser(req:))
         //更新用户
         demoRoute.post(req_content, database_update, "user", use: updateUser(req:))
+        //删除用户
+        demoRoute.post(req_content, database_delete, "user", use: deleteUser(req:))
     }
     
     func overview(req: Request) throws -> String  {
@@ -342,6 +345,7 @@ struct DemoController: RouteCollection {
         post 创建用户...      /\(req_content)/\(database_create)/user  {name=?,age=?,email=?}
         database 查询用户...     /\(req_content)/\(database_query)/user
         database 更新用户...  /\(req_content)/\(database_update)/user /*根据用户名更新用户信息 post*/
+        database 删除用户...  /\(req_content)/\(database_delete)/user /*根据用户名删除用户信息 post*/
         """
     }
     
@@ -560,6 +564,19 @@ struct DemoController: RouteCollection {
         let queryBuilder = demouser.query(on: req.db)
         return queryBuilder.filter(\.$name == newuser.name).set(\.$age, to: newuser.age).set(\.$email, to: newuser.email).update().map { () -> (demouser) in
             newuser
+        }
+    }
+    
+    func deleteUser(req: Request) throws -> EventLoopFuture<demouser> {
+        /**
+         查询构建器支持使用 delete 方法一次删除多个模型
+         delete 支持过滤方法
+         */
+        var deleteuser: demouser
+        deleteuser = try req.content.decode(demouser.self)
+        let queryBuilder = demouser.query(on: req.db)
+        return queryBuilder.filter(\.$name == deleteuser.name).delete().map{() -> demouser in
+            deleteuser
         }
     }
 }
