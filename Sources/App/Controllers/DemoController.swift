@@ -605,4 +605,18 @@ struct DemoController: RouteCollection {
      // Example of manual pagination.
      .paginate(PageRequest(page: 1, per: 2))
      */
+    
+    /**
+     Sort 排序
+     可以使用 sort 方法按字段值对查询结果进行排序
+     ```
+     // Fetch planets sorted by name.
+     Planet.query(on: database).sort(\.$name)
+     ```
+     在平局的情况下，可以添加额外的排序作为后备。 回退将按照它们添加到查询构建器的顺序使用。
+     ```
+     // Fetch users sorted by name. If two users have the same name, sort them by age.
+     User.query(on: database).sort(\.$name).sort(\.$age)
+     ```
+     */
 }
