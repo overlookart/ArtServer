@@ -620,3 +620,64 @@ struct DemoController: RouteCollection {
      ```
      */
 }
+
+/**
+ Transactions
+ transactions 允许您在将数据保存到数据库之前确保多个操作成功完成。 transactions启动后，您可以正常运行 Fluent 查询。 但是，在transactions完成之前，不会将任何数据保存到数据库中。 如果在transactions期间的任何时候（由您或数据库）抛出错误，则任何更改都不会生效。
+ 
+ 要执行事务，您需要访问可以连接到数据库的内容。 这通常是传入的 HTTP 请求。 为此，请使用 req.db.transaction(_ :)：
+ ```
+ req.db.transaction { database in
+     // use database
+ }
+ ```
+ 
+ 一旦进入事务闭包，您必须使用闭包参数中提供的数据库（在示例中命名为 database）来执行查询
+ 一旦这个闭包成功返回，事务将被提交
+ ```
+ var sun: Star = ...
+ var sirius: Star = ...
+
+ return req.db.transaction { database in
+     return sun.save(on: database).flatMap { _ in
+         return sirius.save(on: database)
+     }
+ }
+ ```
+ 上面的例子将在完成交易之前先保存 sun 和 Sirius。 如果任一星未能保存，则两者都不会保存
+ 
+ 事务完成后，结果可以转换为不同的未来，例如转换为 HTTP 状态以指示完成，如下所示：
+ ```
+ return req.db.transaction { database in
+     // use database and perform transaction
+ }.transform(to: HTTPStatus.ok)
+ ```
+ */
+
+/**
+ async/await
+ 如果使用 async/await，您可以将代码重构为以下内容：
+ ```
+ let transaction = try await req.db.transaction
+ try await sun.save(on: transaction)
+ try await sirius.save(on: transaction)
+ return .ok
+ ```
+ */
+
+/**
+ # Schema
+ Fluent 的schema API 允许您以编程方式创建和更新数据库schema 它通常与迁移结合使用以准备数据库以供模型使用
+ ```
+ // An example of Fluent's schema API
+ try await database.schema("planets")
+     .id()
+     .field("name", .string, .required)
+     .field("star_id", .uuid, .required, .references("stars", "id"))
+     .create()
+ ```
+ 要创建 SchemaBuilder，请在数据库上使用 schema 方法
+ 传入要影响的table或collection的名称。 如果您正在编辑模型的schema，请确保此名称与模型的schema相匹配
+ 
+ schema API 支持creating、updating和deleting schema。 每个操作都支持 API 可用方法的一个子集
+ */
