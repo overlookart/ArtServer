@@ -23,6 +23,7 @@ struct DemoController: RouteCollection {
     let database_create: PathComponent = "database_create"
     let database_update: PathComponent = "database_update"
     let database_delete: PathComponent = "database_delete"
+    let database_create_table: PathComponent = "database_create_table"
     func boot(routes: RoutesBuilder) throws {
         let demoRoute = routes.grouped(routeName)
         demoRoute.get(use: overview(req:))
@@ -619,6 +620,10 @@ struct DemoController: RouteCollection {
      User.query(on: database).sort(\.$name).sort(\.$age)
      ```
      */
+    func createDatabaseTable(req: Request){
+        let tableName: String? = req.query["tableName"]
+//        try await req.db.schema(tableName).id().create()
+    }
 }
 
 /**
@@ -680,4 +685,7 @@ struct DemoController: RouteCollection {
  传入要影响的table或collection的名称。 如果您正在编辑模型的schema，请确保此名称与模型的schema相匹配
  
  schema API 支持creating、updating和deleting schema。 每个操作都支持 API 可用方法的一个子集
+ 
+ ## create
+ > 调用 create() 在数据库中创建一个新表或集合。 支持定义新字段和约束的所有方法。 更新或删除的方法被忽略。
  */
