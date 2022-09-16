@@ -41,6 +41,9 @@ public func configure(_ app: Application) throws {
     default: break
         
     }
+    
+    app.views.use(.leaf)
+    
     ArtLogger.artLogger().info("app ---- 配置默认server")
     
     //配置主机名 默认127.0.0.1
