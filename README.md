@@ -3,7 +3,11 @@
 
 包含一个学习Demo,路径为：/demoroutes
  
- 
+ ### 运行及开发环境
+> 1.Xcode
+
+> 2.VS Code 需要安装插件 Swift Language Support for Visual Studio Code
+
 
  ### 目录结构
  ```

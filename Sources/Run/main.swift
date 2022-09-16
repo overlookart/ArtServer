@@ -20,10 +20,16 @@ foo = Environment.process.FOO
  系统日志
  */
 try LoggingSystem.bootstrap(from: &env)
+
 let app = Application(env)
+
 defer { app.shutdown() }
+
 try configure(app)
+
 app.routes.defaultMaxBodySize = "500kb"
+
 app.routes.caseInsensitive = false
+// 启动应用程序
 try app.run()
 
